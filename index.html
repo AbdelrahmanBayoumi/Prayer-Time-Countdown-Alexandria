@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prayer Time Countdown - Alexandria</title>
+    <script src="/adhan.umd.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 50px;
+      }
+      table {
+        width: 50%;
+        margin: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        border: 1px solid black;
+        padding: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Prayer Time Countdown - Alexandria, Egypt</h1>
+    <h4 id="currentDate"></h4>
+    <table>
+      <tr>
+        <th>Prayer</th>
+        <th>Time</th>
+        <th>Countdown</th>
+      </tr>
+      <tbody id="prayer-times"></tbody>
+    </table>
+
+    <script>
+      const now = new Date();
+      document.getElementById("currentDate").innerText = now.toDateString();
+      const coordinates = new adhan.Coordinates(31.1981, 29.9192);
+      const params = adhan.CalculationMethod.Egyptian();
+      const prayerTimes = new adhan.PrayerTimes(coordinates, now, params);
+
+      const prayerNames = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
+      const prayerTimesMap = {
+        Fajr: prayerTimes.fajr,
+        Dhuhr: prayerTimes.dhuhr,
+        Asr: prayerTimes.asr,
+        Maghrib: prayerTimes.maghrib,
+        Isha: prayerTimes.isha,
+      };
+
+      console.log(prayerTimes);
+
+      function formatTime(date) {
+        return date.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      function updateCountdowns() {
+        const now = new Date();
+        const tbody = document.getElementById("prayer-times");
+        tbody.innerHTML = "";
+
+        let nextPrayer = null;
+        let smallestDiff = Infinity;
+
+        prayerNames.forEach((prayer) => {
+          const prayerTime = prayerTimesMap[prayer];
+          const row = document.createElement("tr");
+
+          // Calculate time difference in milliseconds
+          const diff = prayerTime - now;
+
+          // Find next prayer
+          if (diff > 0 && diff < smallestDiff) {
+            smallestDiff = diff;
+            nextPrayer = prayer;
+          }
+
+          // Format countdown
+          let countdownText = "";
+          if (diff > 0) {
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            countdownText = `${hours.toString().padStart(2, "0")}:${minutes
+              .toString()
+              .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+          } else {
+            countdownText = "Passed";
+          }
+
+          // Create table row
+          row.innerHTML = `
+            <td>${prayer}</td>
+            <td>${formatTime(prayerTime)}</td>
+            <td>${countdownText}</td>
+          `;
+
+          // Highlight next prayer
+          if (prayer === nextPrayer) {
+            row.style.backgroundColor = "#ffeb3b";
+          }
+
+          tbody.appendChild(row);
+        });
+      }
+
+      updateCountdowns();
+      setInterval(updateCountdowns, 1000);
+    </script>
+  </body>
+</html>
